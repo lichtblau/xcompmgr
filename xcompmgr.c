@@ -138,6 +138,7 @@ static Atom		winTypeAtom;
 static Atom		winDesktopAtom;
 static Atom		winDockAtom;
 static Atom		winToolbarAtom;
+static Atom		winTooltipAtom;
 static Atom		winMenuAtom;
 static Atom		winUtilAtom;
 static Atom		winSplashAtom;
@@ -1440,6 +1441,8 @@ add_win (Display *dpy, Window id, Window prev)
     }
     else
 	p = &list;
+    if (*p && (*p)->windowType == winTooltipAtom)
+	p = &(*p)->next;
     new->id = id;
     set_ignore (dpy, NextRequest (dpy));
     if (!XGetWindowAttributes (dpy, id, &new->a))
@@ -1497,6 +1500,12 @@ static void
 restack_win (Display *dpy, win *w, Window new_above)
 {
     Window  old_above;
+
+    win *target = find_win (dpy, new_above);
+    if (target && target->windowType == winTooltipAtom)
+	new_above = target->next->id;
+    else if (w->windowType == winTooltipAtom)
+	return;
 
     if (w->next)
 	old_above = w->next->id;
@@ -2188,6 +2197,7 @@ main (int argc, char **argv)
     winDesktopAtom = XInternAtom (dpy, "_NET_WM_WINDOW_TYPE_DESKTOP", False);
     winDockAtom = XInternAtom (dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
     winToolbarAtom = XInternAtom (dpy, "_NET_WM_WINDOW_TYPE_TOOLBAR", False);
+    winTooltipAtom = XInternAtom (dpy, "_NET_WM_WINDOW_TYPE_TOOLTIP", False);
     winMenuAtom = XInternAtom (dpy, "_NET_WM_WINDOW_TYPE_MENU", False);
     winUtilAtom = XInternAtom (dpy, "_NET_WM_WINDOW_TYPE_UTILITY", False);
     winSplashAtom = XInternAtom (dpy, "_NET_WM_WINDOW_TYPE_SPLASH", False);
